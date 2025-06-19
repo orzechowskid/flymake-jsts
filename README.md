@@ -1,4 +1,4 @@
-# flymake-jsts: A Flymake backend for emacs supporting Javascript/Typescript linting
+# flymake-jsts: A Flymake backend for Javascript/Typescript
 
 ## Supported Linters
 
@@ -18,7 +18,14 @@
   :straight '(flymake-jsts :type git :host github :repo "orzechowskid/flymake-jsts" :branch "main"))
 ```
 
+Then enable the linter(s) of your choice:
+
+- `M-x flymake-jsts-eslint-enable` (or `-oxlint-enable`, etc.)
+- `M-x flymake-mode`
+
 ## Configuration
+
+useful variables are members of the `flymake-jsts` group and can be viewed and modified with the command `M-x customize-group [RET] flymake-jsts [RET]`.
 
 ### `flymake-jsts-executable-name-alist`
 
