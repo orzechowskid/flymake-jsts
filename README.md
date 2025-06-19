@@ -53,6 +53,34 @@ Non-nil to write tracing info to the `*Messages*` buffer.  It sometimes comes in
 
 this is a from-the-ground-up rewrite of `flymake-eslint`, which was the first elisp package I ever published; I've learned a lot since then!  it should be easier to add support for other linters like biome or stylelint, for instance, and it should be a little easier to customize too.
 
+## Playbooks
+
+### Usage with eglot
+
+> [!TIP]
+> [tsx-mode.el](https://github.com/orzechowskid/tsx-mode.el) can configure this (and lots more) for you.
+
+eglot is pretty aggressive in taking over your Flymake configuration; it assumes that your language server is the only source of diagnostic messages, and completely overwrites the value of `flymake-diagnostic-functions` to suit its own needs.  One workaround you can try is to add a `flymake-jsts` backend function after eglot has been enabled:
+
+```lisp
+(add-hook 'eglot-managed-mode-hook
+  (lambda ()
+    (flymake-jsts-eslint-enable))
+  nil t)
+```
+
+Alternately, you can tell eglot to stay out of your Flymake configuration and then add eglot's backend yourself:
+
+```lisp
+(add-to-list 'eglot-stay-out-of 'flymake)
+(add-hook 'flymake-mode-hook
+  (lambda ()
+    (add-hook 'flymake-diagnostic-functions
+	  #'eglot-flymake-backend
+	  nil
+	  t)))
+```
+
 ## License
 
 GPLv3
