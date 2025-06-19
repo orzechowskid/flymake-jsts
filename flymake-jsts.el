@@ -89,13 +89,13 @@ and COLUMN."
 			(forward-char (1- column))
 			(point))))
 
-(defun flymake-jsts/eslint-json-to-diags (source-buffer lint-buffer)
+(defun flymake-jsts/eslint-report-diags (source-buffer lint-buffer)
 	"Internal function.  Parses eslint output (expressed in JSON) and returns a
 list of Flymake diagnostic messages.
 
 SOURCE-BUFFER is the buffer containing the user's source code; LINT-BUFFER is
 the buffer containing eslint's own output."
-	(flymake-jsts/message "eslint json-to-diags")
+	(flymake-jsts/message "eslint report-diags")
 	;; the JSON in an eslint buffer looks like this:
 	;;
 	;; [{
@@ -167,13 +167,13 @@ the buffer containing eslint's own output."
 														 0))
 						 ('(debug json-parse-error) (flymake-jsts/get-error-diags source-buffer)))))
 
-(defun flymake-jsts/oxlint-json-to-diags (source-buffer lint-buffer)
+(defun flymake-jsts/oxlint-report-diags (source-buffer lint-buffer)
 	"Internal function.  Parses oxlint output (expressed in JSON) and returns a
 list of Flymake diagnostic messages.
 
 SOURCE-BUFFER is the buffer containing the user's source code; LINT-BUFFER is
 the buffer containing oxlint's own output."
-	(flymake-jsts/message "oxlint json-to-diags")
+	(flymake-jsts/message "oxlint report-diags")
 	;; the JSON in an oxlint buffer looks like this:
 	;;
 	;; {
@@ -366,8 +366,8 @@ to, and coordinating the output of, its helper functions.
 SOURCE-BUFFER should be a buffer containing the source code to lint.
 
 GET-PROCESS-FN should be a function which takes two arguments (a source buffer
-and a callback function) and spawns an external process which passes a lint
-buffer to the callback function when terminated.  The return value of
+and a callback function) and spawns an external process which passes a linter-
+output buffer to its callback function when terminated.  The return value of
 GET-PROCESS-FN is currently ignored.
 
 GENERATE-DIAGS-FN should be a function which takes two arguments (a source
@@ -382,11 +382,13 @@ REPORT-FN is Flymake's own `report-fn`."
 							 source-buffer
 							 ;; callback invoked when 
 							 (lambda (lint-buffer)
-								 (funcall report-fn
-													;; ask REPORT-DIAGS-FN to create a list of messages
-													(funcall report-diags-fn
-																	 source-buffer
-																	 lint-buffer))))
+								 ;; buffer might have been killed while we were busy
+								 (when (buffer-live-p source-buffer)
+									 (funcall report-fn
+														;; ask REPORT-DIAGS-FN to create a list of messages
+														(funcall report-diags-fn
+																		 source-buffer
+																		 lint-buffer)))))
 		(flymake-jsts/message "buffer is empty")
 		(funcall report-fn
 						 (list))))
@@ -396,7 +398,7 @@ REPORT-FN is Flymake's own `report-fn`."
 `flymake-diagnostic-functions'."
 	(flymake-jsts/check-and-report (current-buffer)
 																 #'flymake-jsts/eslint-create-process
-																 #'flymake-jsts/eslint-json-to-diags
+																 #'flymake-jsts/eslint-report-diags
 																 report-fn))
 
 (defun flymake-jsts-oxlint-check-and-report (report-fn &rest _ignored)
@@ -404,14 +406,16 @@ REPORT-FN is Flymake's own `report-fn`."
 `flymake-diagnostic-functions'."
 	(flymake-jsts/check-and-report (current-buffer)
 																 #'flymake-jsts/oxlint-create-process
-																 #'flymake-jsts/oxlint-json-to-diags
+																 #'flymake-jsts/oxlint-report-diags
 																 report-fn))
 
 (defun flymake-jsts-eslint-enable ()
 	"Convenience function to register eslint as a creator of Flymake diagnostics."
 	(interactive)
 	(add-hook 'flymake-diagnostic-functions
-						#'flymake-jsts-eslint-check-and-report))
+						#'flymake-jsts-eslint-check-and-report
+						nil
+						t))
 
 (defun flymake-jsts-eslint-disable ()
 	"Unregisters eslint as a creator of Flymake diagnostics."
@@ -423,7 +427,9 @@ REPORT-FN is Flymake's own `report-fn`."
 	"Convenience function to register oxlint as a creator of Flymake diagnostics."
 	(interactive)
 	(add-hook 'flymake-diagnostic-functions
-						#'flymake-jsts-oxlint-check-and-report))
+						#'flymake-jsts-oxlint-check-and-report
+						nil
+						t))
 
 (defun flymake-jsts-oxlint-disable ()
 	"Unregisters oxlint as a creator of Flymake diagnostics."
