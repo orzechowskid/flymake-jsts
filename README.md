@@ -6,6 +6,11 @@
 - oxlint
 - biome (coming soon)
 
+## Requirements
+
+- emacs 29+
+- [pfuture](https://github.com/Alexander-Miller/pfuture)
+
 ## Installation
 
 ```
@@ -14,10 +19,6 @@
 ```
 
 ## Configuration
-
-### `flymake-jsts-linter`
-
-Linter to use, or nil to (try to) auto-detect.  Auto-detection probably will not work if you don't have a linter configuration file with a meaningful name (e.g. 'eslint.config.js', '.oxlintrc.json').
 
 ### `flymake-jsts-executable-name-alist`
 

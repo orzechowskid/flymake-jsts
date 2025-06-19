@@ -30,17 +30,6 @@
 	:prefix "flymake-jsts-")
 
 
-(defcustom flymake-jsts-linter nil
-	"Linter to use, or nil to (try to) auto-detect.
-
-Auto-detection probably will not work if you don't have a linter configuration
-file with a meaningful name (e.g. 'eslint.config.js', '.oxlintrc.json')."
-	:type '(choice (const :tag "ESLint" eslint)
-								 (const :tag "oxlint" oxlint)
-								 ;; TODO: (const :tag "biome" biome)
-								 (const :tag "auto-detect" nil))
-	:group 'flymake-jsts)
-
 (defcustom flymake-jsts-executable-name-alist
 	'((eslint . "eslint")
 		(oxlint . "oxlint"))
@@ -53,7 +42,7 @@ file with a meaningful name (e.g. 'eslint.config.js', '.oxlintrc.json')."
 	'((eslint . ("eslint.config.js" "eslint.config.mjs" "eslint.config.cjs" "package.json"))
 		(oxlint . (".oxlintrc.json" "package.json")))
 	"Mapping of linters to 'project markers': files which denote the root of a
-project tree for which linting is applied."
+project tree to which linting is applied."
 	:type '(alist :key-type (symbol :tag "mode")
 								:value-type (repeat string))
 	:group 'flymake-jsts)
@@ -100,14 +89,6 @@ and COLUMN."
 			(forward-char (1- column))
 			(point))))
 
-(defun flymake-jsts/eslint-guess-end-pos (line column source-buffer)
-	"Internal function.  Returns the postion in SOURCE-BUFFER of the end of the
-eslint region pointed to by LINE and COLUMN."
-	(save-match-data
-		(cdr (flymake-diag-region source-buffer
-															line
-															column))))
-
 (defun flymake-jsts/eslint-json-to-diags (source-buffer lint-buffer)
 	"Internal function.  Parses eslint output (expressed in JSON) and returns a
 list of Flymake diagnostic messages.
@@ -115,6 +96,21 @@ list of Flymake diagnostic messages.
 SOURCE-BUFFER is the buffer containing the user's source code; LINT-BUFFER is
 the buffer containing eslint's own output."
 	(flymake-jsts/message "eslint json-to-diags")
+	;; the JSON in an eslint buffer looks like this:
+	;;
+	;; [{
+	;;   messages: [{
+	;;     ruleId: string;
+	;;     severity: number;
+	;;     message: string;
+	;;     line: number;
+	;;     column: number;
+	;;     endLint: number;
+	;;     endColumn: number;
+	;;   }];
+	;; }]
+	;;
+	;; (there's other stuff in there too but we currently don't use it)
 	(seq-map (lambda (el)
 						 (flymake-jsts/message "current message: %s" el)
 						 (let* ((start-column (gethash "column"
@@ -147,9 +143,12 @@ the buffer containing eslint's own output."
 																 (flymake-jsts/get-pos-from-line-and-column end-line
 																																						end-column
 																																						source-buffer)
-															 (flymake-jsts/eslint-guess-end-pos start-line
-																																	start-column
-																																	source-buffer))))
+															 ;; no end-position info found; let Flymake itself
+															 ;; take a guess
+															 (save-match-data
+																 (cdr (flymake-diag-region source-buffer
+																													 start-line
+																													 start-column))))))
 										(flymake-make-diagnostic source-buffer
 																						 start-pos
 																						 end-pos
@@ -260,8 +259,8 @@ the buffer containing oxlint's own output."
 		('(debug json-parse-error) (list (flymake-jsts/get-error-diag source-buffer)))))
 
 (defun flymake-jsts/eslint-get-command (source-buffer)
-	"Internal function.  Generates a shell command (stored as a list of strings)
-for running eslint.  SOURCE-BUFFER is a buffer containing JS/TS source code."
+	"Internal function.  Returns a list of strings which represents a shell
+command for running eslint.  SOURCE-BUFFER is a buffer containing code to lint."
 	`(,(cdr (assoc 'eslint flymake-jsts-executable-name-alist))
 		"--no-color"
 		"--no-ignore"
@@ -272,8 +271,8 @@ for running eslint.  SOURCE-BUFFER is a buffer containing JS/TS source code."
 		,(or (buffer-file-name source-buffer) (buffer-name source-buffer))))
 
 (defun flymake-jsts/oxlint-get-command (file-name source-buffer)
-	"Internal function.  Generates a shell command (stored as a list of strings)
-for running oxlint.  SOURCE-BUFFER is a buffer containing JS/TS source code."
+	"Internal function.  Returns a list of strings which represents a shell
+command for running oxlint.  SOURCE-BUFFER is a buffer containing code to lint."
 	`(,(cdr (assoc 'oxlint flymake-jsts-executable-name-alist))
 		"-f"
 		"json"
@@ -306,16 +305,16 @@ containing the output from the lint process."
 														 (funcall callback buffer)))
 				 (error-callback (lambda (process status buffer)
 													 (funcall callback buffer)))
+				 (cwd (flymake-jsts/get-process-cwd 'eslint
+																						source-buffer))
 				 (proc (pfuture-callback args
 								 :connection-type 'pipe
-								 :directory (flymake-jsts/get-process-cwd 'eslint
-																													source-buffer)
+								 :directory cwd
 								 :on-success success-callback
 								 :on-error error-callback)))
 		(flymake-jsts/message "eslint-create-process\n args: %s\n directory: %s"
 													args
-													(flymake-jsts/get-process-cwd 'eslint
-																												source-buffer))
+													cwd)
 		(progn
 			(process-send-string proc (with-current-buffer source-buffer
 																	(buffer-string)))
@@ -356,62 +355,82 @@ containing the output from the lint process."
 													(flymake-jsts/get-process-cwd 'oxlint source-buffer))
 		proc))
 
-(defun flymake-jsts/autodetect-mode ()
-	"Internal function."
-	'eslint
-	)
+(defun flymake-jsts/check-and-report (source-buffer
+																			get-process-fn
+																			report-diags-fn
+																			report-fn)
+	"Internal function.  A generic function which spawns an external process then
+generates Flymake diagnostics based on its output.  This is done by delegating
+to, and coordinating the output of, its helper functions.
 
-(defun flymake-jsts/check-and-report (report-fn &rest _ignored)
-	"Internal function.  Creates Flymake diagnostics using the user's specified
-linter and emits them via REPORT-FN."
-	(let ((source-buffer (current-buffer))
-				(lint-mode (or flymake-jsts-linter
-											 (flymake-jsts/autodetect-mode))))
-		(cond
-		 ((string-empty-p (buffer-string))
-			;; nothing to do!
-			(flymake-jsts/message "buffer is empty")
-			(funcall report-fn
-							 (list)))
-		 ((eq lint-mode 'eslint)
-			(flymake-jsts/message "starting linting with eslint")
-			(let ((our-callback (lambda (lint-buffer)
-														(flymake-jsts/message "got lint buffer: %s" (with-current-buffer lint-buffer
-																																					(buffer-string)))
-														(funcall report-fn
-																		 (flymake-jsts/eslint-json-to-diags source-buffer
-																																				lint-buffer)))))
-				(flymake-jsts/eslint-create-process source-buffer our-callback)))
-		 ((eq lint-mode 'oxlint)
-			(flymake-jsts/message "starting linting with oxlint")
-			(let ((our-callback (lambda (lint-buffer)
-														(funcall report-fn
-																		 (flymake-jsts/oxlint-json-to-diags source-buffer
-																																				lint-buffer)))))
-				(flymake-jsts/oxlint-create-process source-buffer our-callback)))
-		 (t
-			;; something unsupported
-			(flymake-jsts/message "no supported linter found")
-			(funcall report-fn
-							 (list))))))
+SOURCE-BUFFER should be a buffer containing the source code to lint.
 
-(defun flymake-jsts-enable ()
-	"Registers a JS/TS linter function as a creator of Flymake diagnostics."
+GET-PROCESS-FN should be a function which takes two arguments (a source buffer
+and a callback function) and spawns an external process which passes a lint
+buffer to the callback function when terminated.  The return value of
+GET-PROCESS-FN is currently ignored.
+
+GENERATE-DIAGS-FN should be a function which takes two arguments (a source
+buffer and a linter-output buffer) and returns one value (a list of Flymake
+diagnostic messages).
+
+REPORT-FN is Flymake's own `report-fn`."
+	(if (not (string-empty-p (with-current-buffer source-buffer
+														 (buffer-string))))
+			;; ask GET-PROCESS-FN to spawn a process
+			(funcall get-process-fn
+							 source-buffer
+							 ;; callback invoked when 
+							 (lambda (lint-buffer)
+								 (funcall report-fn
+													;; ask REPORT-DIAGS-FN to create a list of messages
+													(funcall report-diags-fn
+																	 source-buffer
+																	 lint-buffer))))
+		(flymake-jsts/message "buffer is empty")
+		(funcall report-fn
+						 (list))))
+
+(defun flymake-jsts-eslint-check-and-report (report-fn &rest _ignored)
+	"Generates Flymake diagnostics based on eslint output.  Can be used in
+`flymake-diagnostic-functions'."
+	(flymake-jsts/check-and-report (current-buffer)
+																 #'flymake-jsts/eslint-create-process
+																 #'flymake-jsts/eslint-json-to-diags
+																 report-fn))
+
+(defun flymake-jsts-oxlint-check-and-report (report-fn &rest _ignored)
+	"Generates Flymake diagnostics based on oxlint output.  Can be used in
+`flymake-diagnostic-functions'."
+	(flymake-jsts/check-and-report (current-buffer)
+																 #'flymake-jsts/oxlint-create-process
+																 #'flymake-jsts/oxlint-json-to-diags
+																 report-fn))
+
+(defun flymake-jsts-eslint-enable ()
+	"Convenience function to register eslint as a creator of Flymake diagnostics."
 	(interactive)
 	(add-hook 'flymake-diagnostic-functions
-						#'flymake-jsts/check-and-report))
+						#'flymake-jsts-eslint-check-and-report))
 
-(defun flymake-jsts-disable ()
-	"Unregisters a JS/TS linter function as a creator of Flymake diagnostics."
+(defun flymake-jsts-eslint-disable ()
+	"Unregisters eslint as a creator of Flymake diagnostics."
 	(interactive)
 	(remove-hook 'flymake-diagnostic-functions
-							 #'flymake-jsts/check-and-report))
+							 #'flymake-jsts-eslint-check-and-report))
 
+(defun flymake-jsts-oxlint-enable ()
+	"Convenience function to register oxlint as a creator of Flymake diagnostics."
+	(interactive)
+	(add-hook 'flymake-diagnostic-functions
+						#'flymake-jsts-oxlint-check-and-report))
 
-;; ;;;; Footer
+(defun flymake-jsts-oxlint-disable ()
+	"Unregisters oxlint as a creator of Flymake diagnostics."
+	(interactive)
+	(remove-hook 'flymake-diagnostic-functions
+							 #'flymake-jsts-oxlint-check-and-report))
 
 
 (provide 'flymake-jsts)
-
-
 ;;; flymake-eslint.el ends here
