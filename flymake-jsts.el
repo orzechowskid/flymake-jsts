@@ -393,6 +393,7 @@ REPORT-FN is Flymake's own `report-fn`."
 		(funcall report-fn
 						 (list))))
 
+;;;###autoload
 (defun flymake-jsts-eslint-check-and-report (report-fn &rest _ignored)
 	"Generates Flymake diagnostics based on eslint output.  Can be used in
 `flymake-diagnostic-functions'."
@@ -401,6 +402,7 @@ REPORT-FN is Flymake's own `report-fn`."
 																 #'flymake-jsts/eslint-report-diags
 																 report-fn))
 
+;;;###autoload
 (defun flymake-jsts-oxlint-check-and-report (report-fn &rest _ignored)
 	"Generates Flymake diagnostics based on oxlint output.  Can be used in
 `flymake-diagnostic-functions'."
@@ -409,6 +411,7 @@ REPORT-FN is Flymake's own `report-fn`."
 																 #'flymake-jsts/oxlint-report-diags
 																 report-fn))
 
+;;;###autoload
 (defun flymake-jsts-eslint-enable ()
 	"Convenience function to register eslint as a creator of Flymake diagnostics."
 	(interactive)
@@ -417,6 +420,7 @@ REPORT-FN is Flymake's own `report-fn`."
 						nil
 						t))
 
+;;;###autoload
 (defun flymake-jsts-eslint-disable ()
 	"Unregisters eslint as a creator of Flymake diagnostics."
 	(interactive)
