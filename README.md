@@ -43,6 +43,12 @@ Non-nil to show the name of a lint rule as part of the Flymake diagnostic messag
 
 Non-nil to show extra information for each lint rule (when provided), or nil to suppress.
 
+### Others
+
+#### `flymake-jsts/debug`
+
+Non-nil to write tracing info to the `*Messages*` buffer.  It sometimes comes in handy when things aren't working as expected for you.
+
 ## Comparison with `flymake-eslint`
 
 this is a from-the-ground-up rewrite of `flymake-eslint`, which was the first elisp package I ever published; I've learned a lot since then!  it should be easier to add support for other linters like biome or stylelint, for instance, and it should be a little easier to customize too.
