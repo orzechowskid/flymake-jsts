@@ -34,7 +34,7 @@
 	'((eslint . "eslint")
 		(oxlint . "oxlint"))
 	"Mapping of linters to binary names."
-	:type '(alist :key-type (symbol :tag "mode")
+	:type '(alist :key-type (symbol :tag "linter")
 								:value-type (string :tag "binary name"))
 	:group 'flymake-jsts)
 
