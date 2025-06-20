@@ -15,6 +15,8 @@
 ;;; Code:
 
 
+(require 'pfuture)
+
 (require 'flymake-jsts-utils)
 
 

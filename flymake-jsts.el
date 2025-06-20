@@ -19,7 +19,6 @@
 (require 'flymake)
 (require 'seq)
 
-(require 'pfuture)
 (when (featurep 'project)
 	(require 'project))
 
