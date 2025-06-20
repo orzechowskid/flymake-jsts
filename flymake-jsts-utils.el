@@ -65,10 +65,6 @@ buffer and a linter-output buffer) and returns one value (a list of Flymake
 diagnostic messages).
 
 REPORT-FN is Flymake's own report-fn."
-	(message "->%s\n->%s\n->%s"
-					 get-process-fn
-					 report-diags-fn
-					 report-fn)
 	(if (not (string-empty-p (with-current-buffer source-buffer
 														 (buffer-string))))
 			;; ask GET-PROCESS-FN to spawn a process

@@ -170,9 +170,6 @@ containing the output from the lint process."
 								 :directory cwd
 								 :on-success success-callback
 								 :on-error error-callback)))
-		(message "biome-create-process\n args: %s\n directory: %s"
-													args
-													cwd)
 		(progn
 			(process-send-string proc (with-current-buffer source-buffer
 																	(buffer-string)))
@@ -183,7 +180,7 @@ containing the output from the lint process."
 (defun flymake-jsts-biome-check-and-report (report-fn &rest _ignored)
 	"Generates Flymake diagnostics based on biome output.  Can be used in
 `flymake-diagnostic-functions'."
-	(message "linting with biome")
+	(flymake-jsts/message "linting with biome")
 	(flymake-jsts/check-and-report (current-buffer)
 																 #'flymake-jsts/biome-create-process
 																 #'flymake-jsts/biome-report-diags

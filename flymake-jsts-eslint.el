@@ -117,7 +117,6 @@ CALLBACK should be a function which takes a single argument, LINT-BUFFER,
 containing the output from the lint process."
 	(let* ((args (flymake-jsts/eslint-get-command source-buffer))
 				 (success-callback (lambda (process status buffer)
-														 (message "cb")
 														 (flymake-jsts/message "eslint-create-process: no diags")
 														 (funcall callback buffer)))
 				 (error-callback (lambda (process status buffer)
