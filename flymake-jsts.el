@@ -1,6 +1,6 @@
 ;;; flymake-jsts.el --- A Flymake backend for Javascript and Typescript  -*- lexical-binding: t; -*-
 
-;; Version: 1.1.1
+;; Version: 1.1.2
 ;; Author: Dan Orzechowski
 ;; URL: https://github.com/orzechowskid/flymake-jsts
 ;; Package-Requires: ((emacs "29") (pfuture "1.10.3"))
@@ -18,9 +18,6 @@
 
 (require 'flymake)
 (require 'seq)
-
-(when (featurep 'project)
-	(require 'project))
 
 
 (add-to-list 'load-path
