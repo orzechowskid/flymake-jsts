@@ -51,34 +51,43 @@ and COLUMN."
 																			report-fn)
 	"Internal function.  A generic function which spawns an external process then
 generates Flymake diagnostics based on its output.  This is done by delegating
-to, and coordinating the output of, its helper functions.
+to, and coordinating the output of, the helper functions provided as arguments.
 
 SOURCE-BUFFER should be a buffer containing the source code to lint.
 
 GET-PROCESS-FN should be a function which takes two arguments (a source buffer
-and a callback function) and spawns an external process which passes a linter-
-output buffer to its callback function when terminated.  The return value of
-GET-PROCESS-FN is currently ignored.
+and a callback function) and spawns the child process.  Its return value is
+currently ignored.
 
 GENERATE-DIAGS-FN should be a function which takes two arguments (a source
-buffer and a linter-output buffer) and returns one value (a list of Flymake
-diagnostic messages).
+buffer and a linter-output buffer) and generates a list of Flymake diagnostics.
+Its return value should be that list.
 
 REPORT-FN is Flymake's own report-fn."
-	(if (not (string-empty-p (with-current-buffer source-buffer
-														 (buffer-string))))
-			;; ask GET-PROCESS-FN to spawn a process
-			(funcall get-process-fn
-							 source-buffer
-							 ;; callback invoked when 
-							 (lambda (lint-buffer)
-								 ;; buffer might have been killed while we were busy
-								 (when (buffer-live-p source-buffer)
-									 (funcall report-fn
-														;; ask REPORT-DIAGS-FN to create a list of messages
-														(funcall report-diags-fn
-																		 source-buffer
-																		 lint-buffer)))))
+	(if (string-empty-p (with-current-buffer source-buffer
+												(buffer-string)))
+			;; nothing to do; report an empty list
+			(progn
+				(flymake-jsts/message "buffer is empty")
+				(funcall report-fn
+								 (list)))
+		(setq-local flymake-jsts/current-report-fn report-fn)
+		;; ask GET-PROCESS-FN to spawn a process
+		(funcall get-process-fn
+						 source-buffer
+						 (lambda (lint-buffer)
+							 ;; ensure we're using a non-destroyed buffer, as well as the
+							 ;; report-fn belonging to the most recent Flymake request
+							 (when (and (buffer-live-p source-buffer)
+													(eq (buffer-local-value 'flymake-jsts/current-report-fn
+																									source-buffer)
+															report-fn))
+								 (funcall report-fn
+													;; ask REPORT-DIAGS-FN to create a list
+													;; of messages
+													(funcall report-diags-fn
+																	 source-buffer
+																	 lint-buffer)))))
 		(flymake-jsts/message "buffer is empty")
 		(funcall report-fn
 						 (list))))
