@@ -31,7 +31,7 @@ case of linter crash or malfunction."
 	(flymake-make-diagnostic source-buffer
 													 0
 													 1
-													 :error
+													 flymake-jsts-error-type
 													 (with-current-buffer source-buffer
 														 (buffer-substring-no-properties (point-min) (point-max)))))
 

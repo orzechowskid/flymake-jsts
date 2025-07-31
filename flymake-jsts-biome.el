@@ -95,8 +95,8 @@ the buffer containing biome's own output."
 													 (severity (if (string= (gethash "severity"
 																													 el-d)
 																									"error")
-																				 :error
-																			 :warning))
+																				 flymake-jsts-error-type
+																			 flymake-jsts-warning-type))
 													 (start-pos (elt (gethash "span"
 																										(gethash "location"
 																														 el-d))
