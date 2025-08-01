@@ -77,8 +77,8 @@ the buffer containing eslint's own output."
 										(severity (if (equal (gethash "severity"
 																									el)
 																				 1)
-																	:warning
-																:error))
+																	flymake-jsts-warning-type
+																flymake-jsts-error-type))
 										(start-pos (flymake-jsts/get-pos-from-line-and-column start-line
 																																					start-column
 																																					source-buffer))

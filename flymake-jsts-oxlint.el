@@ -69,8 +69,8 @@ the buffer containing oxlint's own output."
 													 (severity (if (string= (gethash "severity"
 																													 el-d)
 																									"warning")
-																				 :warning
-																			 :error))
+																				 flymake-jsts-warning-type
+																			 flymake-jsts-error-type))
 													 (labels (gethash "labels"
 																						el-d)))
 											(append acc

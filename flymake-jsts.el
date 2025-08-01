@@ -64,6 +64,17 @@ by your linter), or nil to supporess."
 	:type 'boolean
 	:group 'flymake-jsts)
 
+(defcustom flymake-jsts-error-type :error
+	"Diagnostic type symbol to use when reporting errors.
+(see `(flymake) Flymake error types')"
+	:type 'symbol
+	:group 'flymake-jsts)
+
+(defcustom flymake-jsts-error-warning :warning
+	"Diagnostic type symbol to use when reporting warnings.
+(see `(flymake) Flymake error types')"
+	:type 'symbol
+	:group 'flymake-jsts)
 
 (defvar flymake-jsts/debug nil
 	"Internal variable.  Set to non-nil to enable debug logging.")
