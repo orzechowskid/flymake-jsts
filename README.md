@@ -43,6 +43,11 @@ Non-nil to show the name of a lint rule as part of the Flymake diagnostic messag
 
 Non-nil to show extra information for each lint rule (when provided), or nil to suppress.
 
+### `flymake-jsts-error-type`
+### `flymake-jsts-warning-type`
+
+Type symbols to use when reporting errors.  Useful to customize if you want to distinguish Flymake errors from other sources of errors (e.g. LSP).
+
 ### Others
 
 #### `flymake-jsts/debug`
