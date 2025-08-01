@@ -1,6 +1,6 @@
 ;;; flymake-jsts.el --- A Flymake backend for Javascript and Typescript  -*- lexical-binding: t; -*-
 
-;; Version: 1.2.0
+;; Version: 1.2.1
 ;; Author: Dan Orzechowski
 ;; URL: https://github.com/orzechowskid/flymake-jsts
 ;; Package-Requires: ((emacs "29") (pfuture "1.10.3"))
@@ -68,8 +68,8 @@ by your linter), or nil to supporess."
 	:type 'symbol
 	:group 'flymake-jsts)
 
-(defcustom flymake-jsts-error-warning :warning
-	"Diagnostic type symbol to use when reporting warnings.
+(defcustom flymake-jsts-warning-type :warning
+ 	"Diagnostic type symbol to use when reporting warnings.
 (see `(flymake) Flymake error types')"
 	:type 'symbol
 	:group 'flymake-jsts)
