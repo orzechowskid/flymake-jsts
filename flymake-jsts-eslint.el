@@ -55,61 +55,71 @@ the buffer containing eslint's own output."
 	;; }]
 	;;
 	;; (there's other stuff in there too but we currently don't use it)
-	(seq-map (lambda (el)
-						 (flymake-jsts/message "current message: %s" el)
-						 (let* ((start-column (gethash "column"
-																					 el))
-										(end-column (gethash "endColumn"
-																				 el))
-										(start-line (gethash "line"
-																				 el))
-										(end-line (gethash "endLine"
-																			 el))
-										(raw-message (gethash "message"
-																					el))
-										(rule-id (gethash "ruleId"
-																			el))
-										(message (if flymake-jsts-show-rule-name
-																 (format "%s [%s]"
-																				 raw-message
-																				 rule-id)
-															 raw-message))
-										(severity (if (equal (gethash "severity"
-																									el)
-																				 1)
-																	flymake-jsts-warning-type
-																flymake-jsts-error-type))
-										(start-pos (flymake-jsts/get-pos-from-line-and-column start-line
-																																					start-column
-																																					source-buffer))
-										(end-pos (if (and end-line
-																			end-column)
-																 (flymake-jsts/get-pos-from-line-and-column end-line
-																																						end-column
-																																						source-buffer)
-															 ;; no end-position info found; let Flymake itself
-															 ;; take a guess
-															 (save-match-data
-																 (cdr (flymake-diag-region source-buffer
-																													 start-line
-																													 start-column))))))
-										(flymake-make-diagnostic source-buffer
-																						 start-pos
-																						 end-pos
-																						 severity
-																						 message
-																						 (list :rule-name
-																									 rule-id))))
-					 ;; map over eslint rules if present or our own fake message if an error
-					 ;; was caught
-					 (condition-case nil
-							 (gethash "messages"
-												(elt (with-current-buffer lint-buffer
-															 (progn
-																 (goto-char (point-min))
-																 (json-parse-buffer)))
-														 0))
-						 ('(debug json-parse-error) (flymake-jsts/get-error-diags source-buffer)))))
+  (let* ((parsed-json (with-current-buffer lint-buffer
+                        (condition-case nil
+                            (json-parse-string (buffer-string))
+                          (json-parse-error (progn
+                                              (flymake-jsts/message "error parsing json")
+                                              nil)))))
+         (messages (when parsed-json
+                     (gethash "messages"
+                              (elt parsed-json
+                                   0)))))
+    ;; map over a list of eslint messages if present, or create our own list
+    ;; containing a single fake message if an error was caught
+    (if messages
+	      (seq-map (lambda (el)
+                   (flymake-jsts/message "current message: %s" el)
+						       (let* ((start-column (gethash "column"
+																					       el))
+										      (end-column (gethash "endColumn"
+																				       el))
+										      (start-line (gethash "line"
+																				       el))
+										      (end-line (gethash "endLine"
+																			       el))
+										      (raw-message (gethash "message"
+																					      el))
+										      (rule-id (gethash "ruleId"
+																			      el))
+										      (message (if flymake-jsts-show-rule-name
+																       (format "%s [%s]"
+																				       raw-message
+																				       rule-id)
+															       raw-message))
+										      (severity (if (equal (gethash "severity"
+																									      el)
+																				       1)
+																	      flymake-jsts-warning-type
+																      flymake-jsts-error-type))
+										      (start-pos (flymake-jsts/get-pos-from-line-and-column start-line
+																																					      start-column
+																																					      source-buffer))
+										      (end-pos (if (and end-line
+																			      end-column)
+																       (flymake-jsts/get-pos-from-line-and-column end-line
+																																						      end-column
+																																						      source-buffer)
+															       ;; no end-position info found; let Flymake itself
+															       ;; take a guess
+															       (save-match-data
+																       (cdr (flymake-diag-region source-buffer
+																													       start-line
+																													       start-column))))))
+										 (flymake-make-diagnostic source-buffer
+																						  start-pos
+																						  end-pos
+																						  severity
+																						  message
+																						  (list :rule-name
+																									  rule-id))))
+                 messages)
+      (list (flymake-make-diagnostic source-buffer
+                                     1
+                                     2
+                                     flymake-jsts-error-type
+                                     (with-current-buffer lint-buffer
+                                       (format "internal eslint error: %s" (buffer-string))))))))
 
 (defun flymake-jsts/eslint-create-process (source-buffer callback)
 	"Internal function.  Runs eslint on the contents of SOURCE-BUFFER then invokes
