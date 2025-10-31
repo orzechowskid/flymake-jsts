@@ -41,8 +41,9 @@ and COLUMN."
 	(with-current-buffer source-buffer
 		(save-excursion
 			(goto-char (point-min))
-			(forward-line (1- line))
-			(forward-char (1- column))
+      (ignore-errors
+			  (forward-line (1- line))
+			  (forward-char (1- column)))
 			(point))))
 
 (defun flymake-jsts/check-and-report (source-buffer

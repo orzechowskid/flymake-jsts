@@ -1,6 +1,6 @@
 ;;; flymake-jsts.el --- A Flymake backend for Javascript and Typescript  -*- lexical-binding: t; -*-
 
-;; Version: 1.2.2
+;; Version: 1.2.3
 ;; Author: Dan Orzechowski
 ;; URL: https://github.com/orzechowskid/flymake-jsts
 ;; Package-Requires: ((emacs "29") (pfuture "1.10.3"))
@@ -82,7 +82,7 @@ by your linter), or nil to supporess."
 (defun flymake-jsts-eslint-enable ()
 	"Convenience function to register eslint as a creator of Flymake diagnostics."
 	(interactive)
-	(add-hook 'flymake-diagnostic-functions
+	(add-hook (make-local-variable 'flymake-diagnostic-functions)
 						#'flymake-jsts-eslint-check-and-report
 						nil
 						t))
@@ -92,7 +92,8 @@ by your linter), or nil to supporess."
 	"Unregisters eslint as a creator of Flymake diagnostics."
 	(interactive)
 	(remove-hook 'flymake-diagnostic-functions
-							 #'flymake-jsts-eslint-check-and-report))
+							 #'flymake-jsts-eslint-check-and-report
+               t))
 
 ;;;###autoload
 (defun flymake-jsts-oxlint-enable ()
@@ -108,7 +109,8 @@ by your linter), or nil to supporess."
 	"Unregisters oxlint as a creator of Flymake diagnostics."
 	(interactive)
 	(remove-hook 'flymake-diagnostic-functions
-							 #'flymake-jsts-oxlint-check-and-report))
+							 #'flymake-jsts-oxlint-check-and-report
+               t))
 
 ;;;###autoload
 (defun flymake-jsts-biome-enable ()
@@ -124,7 +126,8 @@ by your linter), or nil to supporess."
 	"Unregisters biome as a creator of Flymake diagnostics."
 	(interactive)
 	(remove-hook 'flymake-diagnostic-functions
-							 #'flymake-jsts-biome-check-and-report))
+							 #'flymake-jsts-biome-check-and-report
+               t))
 
 
 (provide 'flymake-jsts)
