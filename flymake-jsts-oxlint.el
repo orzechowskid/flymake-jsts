@@ -65,7 +65,7 @@ the buffer containing oxlint's own output."
 																									(format "%s %s"
 																													message-with-rule
 																													help-message)
-																								main-message))
+																								raw-message))
 													 (severity (if (string= (gethash "severity"
 																													 el-d)
 																									"warning")
